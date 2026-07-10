@@ -10,7 +10,6 @@ Press `Mod + Tab`, search, select, and jump.
 
 ## Preview
 
-<!-- Add your screenshot here -->
 
 ![NiriSeek Preview](assets/niriseek-preview.png)
 
