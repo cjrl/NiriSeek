@@ -1,0 +1,49 @@
+window {
+  background: rgba(12, 14, 12, 0.88);
+  border-radius: 18px;
+}
+
+.niriseek-root {
+  background: transparent;
+  padding: 14px;
+}
+
+.niriseek-search {
+  color: #f1f3ec;
+  background: rgba(28, 31, 27, 0.92);
+  border: 1px solid rgba(171, 214, 92, 0.32);
+  border-radius: 11px;
+  padding: 10px 12px;
+  box-shadow: none;
+}
+
+.niriseek-search:focus {
+  box-shadow: 0 0 0 1px rgba(171, 214, 92, 0.18);
+}
+
+.niriseek-list {
+  background: transparent;
+}
+
+.niriseek-list row {
+  color: #ecefe7;
+  background: transparent;
+  border-radius: 12px;
+  margin-top: 3px;
+  margin-bottom: 3px;
+  transition: 120ms ease;
+}
+
+.niriseek-list row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.niriseek-list row:selected {
+  color: #f7faef;
+  background: rgba(171, 214, 92, 0.20);
+  box-shadow: inset 3px 0 rgba(171, 214, 92, 0.95);
+}
+
+.niriseek-list row:selected label {
+  color: #f7faef;
+}

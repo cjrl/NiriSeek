@@ -5,6 +5,22 @@ import Gdk from "gi://Gdk?version=4.0";
 import Gio from "gi://Gio";
 import GLib from "gi://GLib";
 
+function loadStyles() {
+  const provider = new Gtk.CssProvider();
+
+  provider.load_from_path(
+    "/home/mr-zero/project/niri-window-switcher/src/gui/styles/main.css"
+  );
+
+  const display = Gdk.Display.get_default();
+
+  Gtk.StyleContext.add_provider_for_display(
+    display,
+    provider,
+    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+  );
+}
+
 function getWindows() {
   const subprocess = new Gio.Subprocess({
     argv: ["niri", "msg", "--json", "windows"],
@@ -236,6 +252,7 @@ const app = new Gtk.Application({
 });
 
 app.connect("activate", () => {
+  loadStyles();
   if (mainWindow) {
     try {
       windows = sortByRecentFocus(getWindows());
@@ -281,14 +298,17 @@ app.connect("activate", () => {
     margin_start: 16,
     margin_end: 16,
   });
+  root.add_css_class("niriseek-root");
 
   const searchEntry = new Gtk.SearchEntry({
     placeholder_text: "Search open windows...",
   });
+  searchEntry.add_css_class("niriseek-search");
 
   const listBox = new Gtk.ListBox({
     selection_mode: Gtk.SelectionMode.SINGLE,
   });
+  listBox.add_css_class("niriseek-list");
 
   function getSelectedRow() {
     return listBox.get_selected_row();
