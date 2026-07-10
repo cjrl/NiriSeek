@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 
-pkill -f "/home/mr-zero/project/niri-window-switcher/src/gui/main.js" 2>/dev/null || true
+set -euo pipefail
+
+SCRIPT_DIR="$(
+  cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1
+  pwd
+)"
+
+PROJECT_DIR="$(
+  cd -- "$SCRIPT_DIR/.." >/dev/null 2>&1
+  pwd
+)"
+
+APP="$PROJECT_DIR/src/gui/main.js"
+
+pkill -f -- "$APP" 2>/dev/null || true
 
 sleep 0.05
 
-exec /home/mr-zero/project/niri-window-switcher/src/gui/main.js
+exec "$APP"
