@@ -1,12 +1,10 @@
 # NiriSeek
 
-A fast, keyboard-first window switcher built specifically for the [Niri](https://github.com/YaLTeR/niri) Wayland compositor.
+A fast, keyboard-first window switcher built specifically for the Niri Wayland compositor.
 
-NiriSeek lets you quickly search, navigate, and focus open windows across Niri workspaces using a lightweight native GTK4 interface.
+NiriSeek gives you a searchable GTK4 interface for jumping between open windows across Niri workspaces.
 
-Press `Mod + Tab`, type a window name, and jump directly to it.
-
-> Built for personal use on Niri, then polished into something worth sharing.
+Press `Mod + Tab`, search, select, and jump.
 
 ---
 
@@ -14,41 +12,32 @@ Press `Mod + Tab`, type a window name, and jump directly to it.
 
 <!-- Add your screenshot here -->
 
-```text
-Mod + Tab
-    ↓
-NiriSeek opens
-    ↓
-Type to search
-    ↓
-↑ / ↓ to navigate
-    ↓
-Enter to focus
-```
+![NiriSeek Preview](assets/niriseek-preview.png)
 
 ---
 
 ## Features
 
 - Native GTK4 interface
-- Built with JavaScript using GJS
-- Direct integration with Niri IPC
-- Search open windows by title
-- Search using application IDs
+- Built with JavaScript and GJS
+- Direct Niri IPC integration
+- Search windows by title
+- Search windows by application ID
 - Keyboard-first navigation
-- Mouse activation support
+- Mouse row activation
 - Cross-workspace window focusing
 - MRU-style recent-window sorting
-- Currently focused window is deprioritized
+- Currently focused window deprioritization
 - Automatic application icon resolution
 - Human-readable application names
 - Workspace information
-- Dark transparent GTK theme
+- Custom dark transparent GTK theme
 - Floating window integration with Niri
-- Fresh window state on repeated launch
+- Fresh state on repeated launch
+- Portable installation script
 - No Electron
 - No frontend framework
-- No npm runtime dependencies
+- No runtime npm dependencies
 
 ---
 
@@ -79,48 +68,11 @@ GJS:             1.88.0
 Display Server:  Wayland
 ```
 
-The project may work on other Niri versions, but they are not currently verified.
+Other Niri versions may work, but are not currently verified.
 
 ---
 
-## How It Works
-
-NiriSeek communicates with the running Niri compositor using the `niri msg` CLI.
-
-Conceptually:
-
-```text
-Niri compositor
-      ↓
-niri msg --json windows
-      ↓
-NiriSeek reads window metadata
-      ↓
-MRU sorting + filtering
-      ↓
-GTK4 window list
-      ↓
-User selects a window
-      ↓
-niri msg action focus-window --id <window-id>
-```
-
-Window metadata includes information such as:
-
-- Window ID
-- Title
-- Application ID
-- Workspace ID
-- Focus state
-- Focus timestamp
-
-NiriSeek uses this information to create a searchable recent-window list.
-
----
-
-# Installation
-
-## 1. Install Required Dependencies
+## Requirements
 
 You need:
 
@@ -129,30 +81,28 @@ You need:
 - GTK4
 - Git
 
-### Ubuntu / Debian-based systems
+NiriSeek must run inside an active Niri session because it communicates with the compositor using `niri msg`.
+
+---
+
+## Installation
+
+### 1. Install dependencies
+
+#### Ubuntu / Debian-based systems
 
 ```bash
 sudo apt update
 sudo apt install -y git gjs libgtk-4-1
 ```
 
-Verify:
-
-```bash
-gjs --version
-gtk4-launch --version
-niri msg version
-```
-
-Expected output should show installed versions for GJS, GTK4, and Niri.
-
-### Arch Linux
+#### Arch Linux
 
 ```bash
 sudo pacman -S git gjs gtk4
 ```
 
-### Fedora
+#### Fedora
 
 ```bash
 sudo dnf install git gjs gtk4
@@ -160,218 +110,71 @@ sudo dnf install git gjs gtk4
 
 Package names may vary slightly depending on your distribution.
 
+Verify the required tools:
+
+```bash
+gjs --version
+gtk4-launch --version
+niri msg version
+```
+
 ---
 
-## 2. Clone the Repository
-
-Clone NiriSeek into your preferred directory:
+### 2. Clone NiriSeek
 
 ```bash
 git clone <YOUR_GITHUB_REPOSITORY_URL>
-```
-
-Then enter the project:
-
-```bash
-cd NiriSeek
-```
-
-If your repository folder is lowercase:
-
-```bash
 cd niriseek
 ```
 
----
-
-## 3. Make the GUI Entry File Executable
-
-Run:
-
-```bash
-chmod +x src/gui/main.js
-```
-
-Make sure the first line of `src/gui/main.js` contains a valid GJS shebang if you launch it directly.
-
-For example:
-
-```bash
-#!/usr/bin/env -S gjs -m
-```
-
-You can also test the application explicitly with:
-
-```bash
-gjs -m src/gui/main.js
-```
+Replace `<YOUR_GITHUB_REPOSITORY_URL>` with the repository URL.
 
 ---
 
-## 4. Make the Launcher Executable
+### 3. Run the installer
 
-NiriSeek uses a launcher script so repeated `Mod + Tab` presses do not leave multiple stale floating windows open.
-
-Run:
+Make the installer executable:
 
 ```bash
-chmod +x scripts/launch.sh
+chmod +x scripts/install.sh
 ```
 
----
+Run it:
 
-## 5. Configure Local Paths
+```bash
+./scripts/install.sh
+```
 
-### Important
-
-The current project may contain absolute paths from the original development machine.
-
-Before running NiriSeek, inspect:
+The installer creates:
 
 ```text
-scripts/launch.sh
-src/gui/main.js
+~/.local/bin/niriseek
 ```
 
-Look for paths similar to:
+It also prints the Niri configuration required to launch NiriSeek.
 
-```text
-```
-
-Replace them with the absolute path where **you cloned NiriSeek**.
-
-Find your repository path:
+Verify the command:
 
 ```bash
-pwd
+command -v niriseek
 ```
 
-Example:
+Expected output:
 
 ```text
-/home/alex/projects/NiriSeek
+/home/your-user/.local/bin/niriseek
 ```
-
-Your launcher should then point to:
-
-```text
-/home/alex/projects/NiriSeek/src/gui/main.js
-```
-
-### Example `scripts/launch.sh`
-
-```bash
-#!/usr/bin/env bash
-
-APP="/home/alex/projects/NiriSeek/src/gui/main.js"
-
-pkill -f "$APP" 2>/dev/null || true
-
-sleep 0.05
-
-exec "$APP"
-```
-
-Replace:
-
-```text
-/home/alex/projects/NiriSeek
-```
-
-with your real installation path.
 
 ---
 
-## 6. Check the GTK CSS Path
+## Niri Configuration
 
-If `src/gui/main.js` loads CSS using an absolute path, update it too.
-
-For example, if you see:
-
-```js
-provider.load_from_path(
-);
-```
-
-replace it with your actual path:
-
-```js
-provider.load_from_path(
-  "/home/alex/projects/NiriSeek/src/gui/styles/main.css"
-);
-```
-
-Again, use:
-
-```bash
-pwd
-```
-
-to find the correct repository location.
-
----
-
-## 7. Test NiriSeek Manually
-
-Before adding a Niri shortcut, run NiriSeek directly.
-
-From the project root:
-
-```bash
-./src/gui/main.js
-```
-
-Or:
-
-```bash
-gjs -m src/gui/main.js
-```
-
-If everything is working, you should see a GTK window containing your currently open Niri windows.
-
-Test:
-
-- Search
-- Arrow keys
-- Enter
-- Escape
-- Mouse selection
-
-Do not continue to the shortcut configuration until manual launching works.
-
----
-
-# Niri Configuration
-
-NiriSeek needs:
-
-1. A keyboard binding
-2. A floating window rule
-
-You can place these directly in your Niri configuration or use a separate custom include file.
-
----
-
-## Recommended: Separate NiriSeek Config
-
-Create a custom directory:
-
-```bash
-mkdir -p ~/.config/niri/custom
-```
-
-Create:
-
-```bash
-nano ~/.config/niri/custom/niriseek.kdl
-```
-
-Add:
+Add the following to your Niri configuration:
 
 ```kdl
 binds {
     Mod+Tab {
-        spawn "/absolute/path/to/NiriSeek/scripts/launch.sh"
+        spawn "niriseek"
     }
 }
 
@@ -381,64 +184,13 @@ window-rule {
 }
 ```
 
-Replace:
-
-```text
-/absolute/path/to/NiriSeek
-```
-
-with your real repository path.
-
-Example:
-
-```kdl
-binds {
-    Mod+Tab {
-        spawn "/home/alex/projects/NiriSeek/scripts/launch.sh"
-    }
-}
-
-window-rule {
-    match app-id="dev.mohit.NiriSeek"
-    open-floating true
-}
-```
-
----
-
-## Include the Custom Config
-
-Open your main Niri config:
-
-```bash
-nano ~/.config/niri/config.kdl
-```
-
-Add:
-
-```kdl
-include "custom/niriseek.kdl"
-```
-
-For example:
-
-```kdl
-include "custom/niriseek.kdl"
-```
-
-The exact location of the include line is flexible, but make sure it does not conflict with another `Mod+Tab` binding.
-
----
-
-## Validate the Niri Configuration
-
-Before reloading:
+Then validate your configuration:
 
 ```bash
 niri validate
 ```
 
-If the configuration is valid, reload it:
+Reload Niri:
 
 ```bash
 niri msg action load-config-file
@@ -454,47 +206,235 @@ NiriSeek should open as a floating window.
 
 ---
 
-# Existing `Mod + Tab` Conflicts
+## Recommended: Separate Config File
 
-Some Niri configurations already use `Mod + Tab`.
+If your Niri configuration is split across multiple files, you can keep NiriSeek isolated.
 
-If your config contains a built-in recent-window switcher such as:
+Create a custom directory:
+
+```bash
+mkdir -p ~/.config/niri/custom
+```
+
+Create:
+
+```text
+~/.config/niri/custom/niriseek.kdl
+```
+
+Add:
 
 ```kdl
-recent-windows {
-    binds {
-        Mod+Tab {
-            next-window
-        }
+binds {
+    Mod+Tab {
+        spawn "niriseek"
     }
+}
+
+window-rule {
+    match app-id="dev.mohit.NiriSeek"
+    open-floating true
 }
 ```
 
-or another `Mod+Tab` binding, you must remove, disable, or change the conflicting shortcut.
+Then include it from your main Niri config:
 
-You can search your config with:
+```kdl
+include "custom/niriseek.kdl"
+```
+
+Validate and reload:
+
+```bash
+niri validate
+niri msg action load-config-file
+```
+
+---
+
+## Existing `Mod + Tab` Conflicts
+
+Your Niri setup may already use `Mod + Tab`.
+
+Search your configuration:
 
 ```bash
 grep -Rni "Mod+Tab" ~/.config/niri
 ```
 
-You can also search for:
+Also check for Niri's recent-window configuration:
 
 ```bash
 grep -Rni "recent-windows" ~/.config/niri
 ```
 
-If you use a shell or desktop configuration framework that manages Niri config files, check included `.kdl` files too.
+If another binding already uses `Mod + Tab`, remove it or choose a different shortcut for NiriSeek.
+
+For example:
+
+```kdl
+binds {
+    Mod+Space {
+        spawn "niriseek"
+    }
+}
+```
+
+Use any shortcut that does not conflict with your existing setup.
 
 ---
 
-# Project Structure
+## Running Manually
 
-The project is organized around small focused modules.
+You can launch the installed command directly:
+
+```bash
+niriseek
+```
+
+You can also run NiriSeek from the repository:
+
+```bash
+./scripts/launch.sh
+```
+
+Or run the GJS entry point directly:
+
+```bash
+gjs -m src/gui/main.js
+```
+
+---
+
+## How It Works
+
+NiriSeek communicates with Niri through its CLI IPC interface.
+
+The basic flow is:
 
 ```text
-NiriSeek/
+Niri compositor
+      ↓
+niri msg --json windows
+      ↓
+Read open window metadata
+      ↓
+Sort by recent focus history
+      ↓
+Deprioritize current window
+      ↓
+Render GTK4 window list
+      ↓
+Search / navigate
+      ↓
+Select window
+      ↓
+niri msg action focus-window --id <window-id>
+```
+
+Niri exposes window metadata including:
+
+- Window ID
+- Title
+- Application ID
+- Workspace ID
+- Focus state
+- Focus timestamp
+
+NiriSeek uses this data to build a searchable recent-window list.
+
+---
+
+## MRU Sorting
+
+NiriSeek uses Niri's focus timestamps to prioritize recently used windows.
+
+Example:
+
+```text
+Current window:
+Chrome
+
+Recently used:
+1. VS Code
+2. Ghostty
+3. YouTube Music
+```
+
+When NiriSeek opens, the currently focused window is deprioritized.
+
+This makes the previous window easier to reach instead of placing the window you are already using at the top.
+
+---
+
+## Application Icons
+
+NiriSeek resolves installed application icons using:
+
+```text
+Gio.AppInfo
+```
+
+This allows it to automatically display system icons for applications such as:
+
+- Google Chrome
+- Visual Studio Code
+- Ghostty
+- Kitty
+- Firefox
+- App Center
+- Other installed desktop applications
+
+If an icon cannot be resolved, NiriSeek falls back to a generic application icon.
+
+---
+
+## Human-Readable Application Names
+
+Wayland application IDs are not always pretty.
+
+For example:
+
+```text
+chrome-hnpfjngllnobngcgfapefoaidbinmjnm-Default
+```
+
+NiriSeek attempts to resolve application metadata into readable names such as:
+
+```text
+Google Chrome
+```
+
+Application metadata is cached to avoid repeatedly resolving the same information.
+
+---
+
+## Repeated Shortcut Behavior
+
+Repeated `Mod + Tab` presses intentionally refresh NiriSeek.
+
+Example:
+
+```text
+Mod + Tab
+→ NiriSeek opens
+
+Mod + Tab again
+→ previous NiriSeek instance closes
+→ fresh instance opens
+→ latest window state is loaded
+```
+
+This prevents duplicate floating windows from accumulating and ensures the window list is fresh.
+
+---
+
+## Project Structure
+
+```text
+niriseek/
 ├── scripts/
+│   ├── install.sh
 │   └── launch.sh
 │
 ├── src/
@@ -512,68 +452,69 @@ NiriSeek/
 │       ├── ipc.js
 │       └── windows.js
 │
-├── .gitignore
-├── LICENSE
-└── README.md
+├── package.json
+├── package-lock.json
+├── README.md
+└── ...
 ```
 
-Depending on the current development version, the exact structure may differ slightly.
+The exact structure may evolve as the project develops.
 
 ---
 
-# Architecture
+## Architecture
 
-## `src/gui/main.js`
+### `src/gui/main.js`
 
-Responsible for:
+Responsible for high-level application orchestration:
 
 - GTK application lifecycle
 - Main window creation
-- Search input
-- List rendering orchestration
-- Keyboard event handling
+- Search entry
+- List rendering
+- Keyboard handling
 - Selection behavior
-- High-level event wiring
+- Event wiring
 
 ---
 
-## `src/gui/components/window-row.js`
+### `src/gui/components/window-row.js`
 
-Responsible for:
+Responsible for creating individual GTK window rows:
 
-- Creating GTK window rows
-- Rendering application icons
-- Rendering window titles
-- Rendering application names
-- Showing workspace information
+- Application icon
+- Window title
+- Human-readable application name
+- Workspace number
+- Niri window ID
 
 ---
 
-## `src/gui/utils/app-info.js`
+### `src/gui/utils/app-info.js`
 
-Responsible for:
+Responsible for application metadata:
 
 - Application ID normalization
-- Automatic icon resolution
-- Human-readable application names
+- Icon resolution
+- Human-readable names
 - `Gio.AppInfo` matching
-- Icon caching
-- Application metadata caching
+- Metadata caching
 - Fallback mappings
 
 ---
 
-## `src/gui/utils/styles.js`
+### `src/gui/utils/styles.js`
 
 Responsible for:
 
 - Loading GTK CSS
-- Registering the CSS provider
-- Applying application styling
+- Resolving the stylesheet relative to the project
+- Registering the GTK CSS provider
+- Avoiding hardcoded machine-specific paths
 
 ---
 
-## `src/niri/ipc.js`
+### `src/niri/ipc.js`
 
 Responsible for low-level communication with Niri.
 
@@ -586,14 +527,14 @@ niri msg --json windows
 and:
 
 ```text
-niri msg action focus-window --id <id>
+niri msg action focus-window --id <window-id>
 ```
 
 ---
 
-## `src/niri/windows.js`
+### `src/niri/windows.js`
 
-Responsible for window-specific logic such as:
+Responsible for window-specific logic:
 
 - Reading open windows
 - MRU sorting
@@ -604,296 +545,29 @@ Responsible for window-specific logic such as:
 
 ---
 
-# MRU Window Sorting
+## Portable Paths
 
-NiriSeek uses Niri's focus timestamp metadata:
-
-```json
-{
-  "focus_timestamp": {
-    "secs": 5285,
-    "nanos": 4951951
-  }
-}
-```
-
-Windows are sorted by recent focus history.
-
-The currently focused window is deprioritized so that the previously used window becomes easier to access.
-
-Example:
+NiriSeek does not depend on hardcoded paths such as:
 
 ```text
-Current window: Chrome
-
-Recently used:
-1. VS Code
-2. Ghostty
-3. YouTube Music
+/home/some-user/projects/niriseek
 ```
 
-Opening NiriSeek prioritizes useful switching targets instead of simply placing the current window first.
+The launcher resolves the project directory dynamically.
+
+The GTK stylesheet is also resolved relative to the source module rather than using a machine-specific absolute path.
+
+This allows the repository to be cloned into different locations without editing source files.
 
 ---
 
-# Application Icons
-
-NiriSeek attempts to resolve real installed application icons using:
-
-```text
-Gio.AppInfo
-```
-
-This allows applications such as:
-
-- Google Chrome
-- Visual Studio Code
-- Ghostty
-- Kitty
-- App Center
-- Firefox
-- Other installed desktop applications
-
-to display their native system icons.
-
-If no icon can be resolved, NiriSeek falls back to a generic application icon.
-
----
-
-# Application Names
-
-Raw Wayland application IDs can look like:
-
-```text
-chrome-hnpfjngllnobngcgfapefoaidbinmjnm-Default
-```
-
-NiriSeek attempts to resolve these into readable application names such as:
-
-```text
-Google Chrome
-```
-
-or:
-
-```text
-WhatsApp Web
-```
-
-where metadata is available.
-
----
-
-# Relaunch Behavior
-
-Repeated shortcut presses intentionally create a fresh NiriSeek session.
-
-Example:
-
-```text
-Mod + Tab
-→ NiriSeek opens
-
-Mod + Tab again
-→ previous NiriSeek process closes
-→ fresh NiriSeek opens
-→ latest window state is loaded
-```
-
-This prevents duplicate floating switcher windows from accumulating.
-
-The current launcher implementation uses a path-specific process match.
-
-This works well for local use, but a future version may replace it with a more robust mechanism such as:
-
-- PID files
-- Lock files
-- D-Bus activation
-- Dedicated application activation handling
-
----
-
-# Troubleshooting
-
-## NiriSeek Does Not Open
-
-Run it manually:
-
-```bash
-gjs -m src/gui/main.js
-```
-
-Look for GJS errors.
-
-Also verify:
-
-```bash
-gjs --version
-```
-
----
-
-## `Mod + Tab` Does Nothing
-
-Check your Niri config:
-
-```bash
-niri validate
-```
-
-Then reload:
-
-```bash
-niri msg action load-config-file
-```
-
-Verify the launcher path exists:
-
-```bash
-ls -l /absolute/path/to/NiriSeek/scripts/launch.sh
-```
-
-Verify it is executable:
-
-```bash
-chmod +x /absolute/path/to/NiriSeek/scripts/launch.sh
-```
-
-Search for conflicting shortcuts:
-
-```bash
-grep -Rni "Mod+Tab" ~/.config/niri
-```
-
----
-
-## Window Opens Tiled Instead of Floating
-
-Inspect the real application ID:
-
-```bash
-niri msg --json windows
-```
-
-If you have `jq` installed:
-
-```bash
-niri msg --json windows | jq '.[] | {title, app_id, id}'
-```
-
-NiriSeek should use:
-
-```text
-dev.mohit.NiriSeek
-```
-
-Make sure your rule is:
-
-```kdl
-window-rule {
-    match app-id="dev.mohit.NiriSeek"
-    open-floating true
-}
-```
-
-Then validate and reload:
-
-```bash
-niri validate
-niri msg action load-config-file
-```
-
----
-
-## Search Box Appears but Windows Do Not
-
-First verify Niri returns windows:
-
-```bash
-niri msg --json windows
-```
-
-If this command fails, NiriSeek cannot retrieve the current window list.
-
-Make sure you are running NiriSeek inside an active Niri session.
-
----
-
-## Icons Are Missing
-
-NiriSeek resolves icons using installed desktop application metadata.
-
-Check whether the application has a `.desktop` entry:
-
-```bash
-find /usr/share/applications ~/.local/share/applications \
-  -iname "*.desktop" 2>/dev/null
-```
-
-Some applications, PWAs, custom launchers, and sandboxed applications may not map cleanly from Wayland `app_id` to desktop entry ID.
-
-A generic icon may be shown as fallback.
-
----
-
-## Escape or Enter Does Not Work
-
-NiriSeek uses a GTK key controller in capture phase:
-
-```text
-Gtk.PropagationPhase.CAPTURE
-```
-
-This is required because the GTK search entry may otherwise consume keys before the window-level handler sees them.
-
-If modifying the keyboard code, preserve capture-phase handling.
-
----
-
-## Permission Denied
-
-If you see:
-
-```text
-permission denied
-```
-
-make scripts executable:
-
-```bash
-chmod +x src/gui/main.js
-chmod +x scripts/launch.sh
-```
-
-Also remember that configuration files such as:
-
-```text
-~/.config/niri/custom/niriseek.kdl
-```
-
-are not shell commands.
-
-Edit them with:
-
-```bash
-nano ~/.config/niri/custom/niriseek.kdl
-```
-
-or:
-
-```bash
-code ~/.config/niri/custom/niriseek.kdl
-```
-
----
-
-# Development
+## Development
 
 Clone the repository:
 
 ```bash
 git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd NiriSeek
+cd niriseek
 ```
 
 Run directly:
@@ -902,13 +576,7 @@ Run directly:
 gjs -m src/gui/main.js
 ```
 
-Or, if executable:
-
-```bash
-./src/gui/main.js
-```
-
-Check Niri window data:
+Inspect Niri windows:
 
 ```bash
 niri msg --json windows
@@ -920,116 +588,336 @@ Pretty-print with `jq`:
 niri msg --json windows | jq
 ```
 
-Inspect selected fields:
+Inspect useful fields:
 
 ```bash
 niri msg --json windows | jq \
-  '.[] | {id, title, app_id, workspace_id, is_focused, focus_timestamp}'
+  '.[] | {
+    id,
+    title,
+    app_id,
+    workspace_id,
+    is_focused,
+    focus_timestamp
+  }'
 ```
 
 ---
 
-# Design Philosophy
+## Troubleshooting
+
+### NiriSeek does not open
+
+Run it manually:
+
+```bash
+niriseek
+```
+
+Or:
+
+```bash
+gjs -m src/gui/main.js
+```
+
+Check the terminal for GJS errors.
+
+Verify:
+
+```bash
+gjs --version
+niri msg version
+```
+
+---
+
+### `Mod + Tab` does nothing
+
+Validate the Niri configuration:
+
+```bash
+niri validate
+```
+
+Reload it:
+
+```bash
+niri msg action load-config-file
+```
+
+Verify the launcher exists:
+
+```bash
+command -v niriseek
+```
+
+Search for shortcut conflicts:
+
+```bash
+grep -Rni "Mod+Tab" ~/.config/niri
+```
+
+---
+
+### `niriseek: command not found`
+
+The installer places the launcher in:
+
+```text
+~/.local/bin/niriseek
+```
+
+Check whether `~/.local/bin` is in your `PATH`:
+
+```bash
+echo "$PATH"
+```
+
+If needed, add this to your shell configuration:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+For Zsh:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+For Bash:
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+Then verify:
+
+```bash
+command -v niriseek
+```
+
+---
+
+### Window opens tiled instead of floating
+
+Inspect open windows:
+
+```bash
+niri msg --json windows
+```
+
+With `jq`:
+
+```bash
+niri msg --json windows | jq \
+  '.[] | {title, app_id, id}'
+```
+
+NiriSeek should use:
+
+```text
+dev.mohit.NiriSeek
+```
+
+Make sure your Niri rule is:
+
+```kdl
+window-rule {
+    match app-id="dev.mohit.NiriSeek"
+    open-floating true
+}
+```
+
+Then:
+
+```bash
+niri validate
+niri msg action load-config-file
+```
+
+---
+
+### Search box appears but windows do not
+
+Verify Niri returns window data:
+
+```bash
+niri msg --json windows
+```
+
+NiriSeek must run inside an active Niri session.
+
+If the command itself fails, NiriSeek cannot retrieve the current window list.
+
+---
+
+### Icons are missing
+
+NiriSeek resolves icons from installed application metadata.
+
+Some applications may not map cleanly between:
+
+```text
+Wayland app_id
+```
+
+and:
+
+```text
+.desktop application ID
+```
+
+This is especially common with:
+
+- Browser PWAs
+- Custom launchers
+- Sandboxed applications
+- Manually installed applications
+
+A generic icon is used as fallback.
+
+---
+
+### Enter or Escape does not work
+
+NiriSeek uses a GTK key controller with:
+
+```text
+Gtk.PropagationPhase.CAPTURE
+```
+
+This is intentional.
+
+The search entry has keyboard focus, so capture-phase handling ensures:
+
+- `Enter` activates the selected window
+- `Escape` closes NiriSeek
+- `↑` and `↓` move selection
+
+If modifying keyboard logic, preserve capture-phase handling.
+
+---
+
+### Permission denied
+
+Make scripts executable:
+
+```bash
+chmod +x scripts/install.sh
+chmod +x scripts/launch.sh
+chmod +x src/gui/main.js
+```
+
+Then retry.
+
+---
+
+## Current Limitations
+
+- Primarily tested on Niri 26.04
+- Linux / Wayland / Niri-specific
+- Some application icons may use generic fallbacks
+- Browser PWAs can expose generated application IDs
+- Installation currently points the installed launcher back to the cloned repository
+- Moving or deleting the cloned repository after installation can break the installed launcher
+- True compositor-level background blur is not implemented by NiriSeek itself
+
+---
+
+## Roadmap
+
+Possible future improvements:
+
+- Better fuzzy search
+- More robust single-instance handling
+- D-Bus activation
+- XDG-compliant application installation
+- Copy application files into `~/.local/share/niriseek`
+- `.desktop` application entry
+- Configurable theme
+- Configurable shortcut
+- Better browser PWA metadata
+- Testing across more Niri versions
+- Packaging for Linux distributions
+
+---
+
+## Design Philosophy
 
 NiriSeek follows a simple rule:
 
 > Make it work first. Make it useful second. Make it beautiful third.
 
-The project started as a small experiment to answer one question:
-
-> Can a custom application read Niri's open windows and focus them?
-
-That became:
+The project started as a small experiment:
 
 ```text
-Terminal prototype
-    ↓
-Niri IPC integration
-    ↓
-Window search
-    ↓
+Can a custom application read Niri windows
+and focus them across workspaces?
+```
+
+That evolved into:
+
+```text
+Niri IPC prototype
+        ↓
+Window discovery
+        ↓
+Window focusing
+        ↓
 GTK4 interface
-    ↓
+        ↓
 Keyboard navigation
-    ↓
-Cross-workspace focusing
-    ↓
+        ↓
+Search
+        ↓
 MRU sorting
-    ↓
+        ↓
 Automatic icons
-    ↓
-Application metadata
-    ↓
+        ↓
+Readable app metadata
+        ↓
 Custom transparent theme
-    ↓
+        ↓
+Portable launcher
+        ↓
 NiriSeek
 ```
 
 ---
 
-# Current Limitations
+## Why NiriSeek?
 
-- Primarily tested on Niri 26.04
-- Linux/Wayland/Niri-specific
-- Some application icons may require fallback mappings
-- Some browser PWAs expose long generated application IDs
-- Current launcher behavior uses process matching
-- Installation currently requires manual Niri configuration
-- Absolute paths may need manual adjustment after cloning
-- True compositor-level background blur is not implemented by NiriSeek itself
-
----
-
-# Roadmap
-
-Possible future improvements:
-
-- Better fuzzy search
-- More robust single-instance activation
-- PID or lock-file based relaunch handling
-- Automatic installation script
-- XDG-compliant resource paths
-- `.desktop` application entry
-- Configurable keyboard shortcut
-- Configurable theme
-- Better PWA metadata detection
-- Package support
-- Reduced hardcoded paths
-- Improved accessibility
-- Support testing across more Niri versions
-
----
-
-# Why NiriSeek?
-
-Niri already provides powerful window-management primitives.
+Niri already provides powerful window management.
 
 NiriSeek is not trying to replace Niri's workflow.
 
 It adds a searchable, visual, keyboard-first layer for users who want to jump directly between open windows across workspaces.
 
-Especially useful when:
+It is especially useful when:
 
 - Many windows are open
 - Multiple workspaces are active
 - Several windows belong to the same application
-- Window titles matter more than application names
+- Window titles matter
 - You prefer keyboard-driven navigation
 
 ---
 
-# Contributing
+## Contributing
 
 Contributions, bug reports, and ideas are welcome.
 
-If you find an issue, include:
+When reporting an issue, please include:
 
 - Niri version
 - GJS version
 - GTK4 version
 - Linux distribution
 - Relevant terminal error
-- Relevant `app_id` if the issue involves a specific application
+- Relevant application ID if the issue affects a specific app
 
 Useful commands:
 
@@ -1041,11 +929,17 @@ gtk4-launch --version
 
 ---
 
-# License
+## License
 
-Add your preferred open-source license to the repository.
+This project is open source.
 
-MIT is a good option for a small developer tool like NiriSeek.
+Add the license used by this repository here.
+
+For example:
+
+```text
+MIT License
+```
 
 ---
 
@@ -1061,4 +955,4 @@ MIT is a good option for a small developer tool like NiriSeek.
 
 ---
 
-If you use NiriSeek, improve it, break it, or make it prettier, feel free to open an issue or contribute.
+If you use NiriSeek, improve it, break it, or make it prettier, contributions are welcome.
