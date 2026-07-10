@@ -26,6 +26,8 @@ function getWindows() {
   return JSON.parse(stdout);
 }
 
+
+
 function focusWindow(windowId) {
   const subprocess = new Gio.Subprocess({
     argv: [
@@ -42,11 +44,19 @@ function focusWindow(windowId) {
   subprocess.init(null);
 }
 
+let mainWindow = null;
+
 const app = new Gtk.Application({
-  application_id: "dev.mohit.NiriWindowSwitcher",
+  application_id: "dev.mohit.NiriSeek",
+  flags: Gio.ApplicationFlags.DEFAULT_FLAGS,
 });
 
 app.connect("activate", () => {
+  if (mainWindow) {
+    mainWindow.present();
+    return;
+  }
+
   let windows;
 
   try {
@@ -58,9 +68,15 @@ app.connect("activate", () => {
 
   const window = new Gtk.ApplicationWindow({
     application: app,
-    title: "Niri Window Switcher",
+    title: "NiriSeek",
     default_width: 680,
     default_height: 480,
+  });
+
+  mainWindow = window;
+
+  window.connect("destroy", () => {
+    mainWindow = null;
   });
 
   const root = new Gtk.Box({
