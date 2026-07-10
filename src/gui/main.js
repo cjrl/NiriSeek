@@ -44,7 +44,29 @@ function focusWindow(windowId) {
   subprocess.init(null);
 }
 
+function sortByRecentFocus(windows) {
+  return [...windows].sort((a, b) => {
+    // Current window should come after non-focused windows
+    if (a.is_focused !== b.is_focused) {
+      return a.is_focused ? 1 : -1;
+    }
+
+    const aSecs = a.focus_timestamp?.secs ?? 0;
+    const bSecs = b.focus_timestamp?.secs ?? 0;
+
+    if (aSecs !== bSecs) {
+      return bSecs - aSecs;
+    }
+
+    const aNanos = a.focus_timestamp?.nanos ?? 0;
+    const bNanos = b.focus_timestamp?.nanos ?? 0;
+
+    return bNanos - aNanos;
+  });
+}
+
 let mainWindow = null;
+let windows = [];
 
 const app = new Gtk.Application({
   application_id: "dev.mohit.NiriSeek",
@@ -53,14 +75,24 @@ const app = new Gtk.Application({
 
 app.connect("activate", () => {
   if (mainWindow) {
+    try {
+      windows = sortByRecentFocus(getWindows());
+
+      renderWindows(
+        searchEntry.get_text()
+      );
+    } catch (error) {
+      console.error(error.message);
+    }
+
     mainWindow.present();
+    searchEntry.grab_focus();
+
     return;
   }
 
-  let windows;
-
   try {
-    windows = getWindows();
+    windows = sortByRecentFocus(getWindows());
   } catch (error) {
     console.error(error.message);
     return;
@@ -150,22 +182,26 @@ app.connect("activate", () => {
     const normalizedQuery =
       query.trim().toLowerCase();
 
-    const matches = windows.filter((item) => {
-      if (!normalizedQuery) {
-        return true;
-      }
+    const matches = windows
+  .filter((item) => {
+    return item.app_id !== "dev.mohit.NiriSeek";
+  })
+  .filter((item) => {
+    if (!normalizedQuery) {
+      return true;
+    }
 
-      const title =
-        item.title?.toLowerCase() || "";
+    const title =
+      item.title?.toLowerCase() || "";
 
-      const appId =
-        item.app_id?.toLowerCase() || "";
+    const appId =
+      item.app_id?.toLowerCase() || "";
 
-      return (
-        title.includes(normalizedQuery) ||
-        appId.includes(normalizedQuery)
-      );
-    });
+    return (
+      title.includes(normalizedQuery) ||
+      appId.includes(normalizedQuery)
+    );
+  });
 
     for (const niriWindow of matches) {
       const row = new Gtk.ListBoxRow();
