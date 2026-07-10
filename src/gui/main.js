@@ -3,6 +3,7 @@
 import Gtk from "gi://Gtk?version=4.0";
 import Gdk from "gi://Gdk?version=4.0";
 import Gio from "gi://Gio";
+import GLib from "gi://GLib";
 
 function getWindows() {
   const subprocess = new Gio.Subprocess({
@@ -65,6 +66,167 @@ function sortByRecentFocus(windows) {
   });
 }
 
+
+const iconCache = new Map();
+
+function getDesktopApplications() {
+  return Gio.AppInfo.get_all();
+}
+
+function normalizeAppId(value = "") {
+  return value
+    .toLowerCase()
+    .replace(/\.desktop$/, "")
+    .replace(/-default$/, "");
+}
+
+const appNameCache = new Map();
+
+function getAppName(appId) {
+  if (!appId) return "Unknown App";
+
+  if (appNameCache.has(appId)) {
+    return appNameCache.get(appId);
+  }
+
+  const normalizedAppId = normalizeAppId(appId);
+
+  const applications = Gio.AppInfo.get_all();
+
+  const exactMatch = applications.find((application) => {
+    const desktopId = normalizeAppId(
+      application.get_id() || ""
+    );
+
+    return desktopId === normalizedAppId;
+  });
+
+  if (exactMatch) {
+    const name = exactMatch.get_display_name();
+
+    appNameCache.set(appId, name);
+    return name;
+  }
+
+  const partialMatch = applications.find((application) => {
+    const desktopId = normalizeAppId(
+      application.get_id() || ""
+    );
+
+    return (
+      desktopId.includes(normalizedAppId) ||
+      normalizedAppId.includes(desktopId)
+    );
+  });
+
+  if (partialMatch) {
+    const name = partialMatch.get_display_name();
+
+    appNameCache.set(appId, name);
+    return name;
+  }
+
+  const fallbackMap = [
+    ["chrome-", "Google Chrome"],
+    ["google-chrome", "Google Chrome"],
+    ["code", "Visual Studio Code"],
+    ["ghostty", "Ghostty"],
+    ["kitty", "Kitty"],
+    ["snap-store", "App Center"],
+    ["nautilus", "Files"],
+    ["opera", "Opera"],
+    ["firefox", "Firefox"],
+  ];
+
+  const fallback = fallbackMap.find(([key]) =>
+    normalizedAppId.includes(key)
+  );
+
+  const name = fallback?.[1] || appId;
+
+  appNameCache.set(appId, name);
+
+  return name;
+}
+
+function getIconName(appId) {
+  if (!appId) {
+    return "application-x-executable";
+  }
+
+  if (iconCache.has(appId)) {
+    return iconCache.get(appId);
+  }
+
+  const normalizedAppId = normalizeAppId(appId);
+
+  const manualMap = [
+    ["google-chrome", "google-chrome"],
+    ["chrome-", "google-chrome"],
+    ["code", "com.visualstudio.code"],
+    ["ghostty", "com.mitchellh.ghostty"],
+    ["nautilus", "org.gnome.Nautilus"],
+    ["opera", "opera"],
+    ["firefox", "firefox"],
+  ];
+
+  const manualMatch = manualMap.find(([key]) =>
+    normalizedAppId.includes(key)
+  );
+
+  if (manualMatch) {
+    iconCache.set(appId, manualMatch[1]);
+    return manualMatch[1];
+  }
+
+  const applications = getDesktopApplications();
+
+  const exactMatch = applications.find((application) => {
+    const desktopId = normalizeAppId(
+      application.get_id() || ""
+    );
+
+    return desktopId === normalizedAppId;
+  });
+
+  if (exactMatch) {
+    const icon = exactMatch.get_icon();
+
+    if (icon) {
+      iconCache.set(appId, icon);
+      return icon;
+    }
+  }
+
+  const partialMatch = applications.find((application) => {
+    const desktopId = normalizeAppId(
+      application.get_id() || ""
+    );
+
+    return (
+      desktopId.includes(normalizedAppId) ||
+      normalizedAppId.includes(desktopId)
+    );
+  });
+
+  if (partialMatch) {
+    const icon = partialMatch.get_icon();
+
+    if (icon) {
+      iconCache.set(appId, icon);
+      return icon;
+    }
+  }
+
+  iconCache.set(
+    appId,
+    "application-x-executable"
+  );
+
+  return "application-x-executable";
+}
+
+
 let mainWindow = null;
 let windows = [];
 
@@ -102,7 +264,7 @@ app.connect("activate", () => {
     application: app,
     title: "NiriSeek",
     default_width: 680,
-    default_height: 480,
+    default_height: 120,
   });
 
   mainWindow = window;
@@ -139,6 +301,8 @@ app.connect("activate", () => {
       listBox.select_row(firstRow);
     }
   }
+
+  
 
   function moveSelection(direction) {
     const selectedRow = getSelectedRow();
@@ -209,30 +373,52 @@ app.connect("activate", () => {
       row.niriWindowId = niriWindow.id;
 
       const content = new Gtk.Box({
-        orientation: Gtk.Orientation.VERTICAL,
-        spacing: 4,
-        margin_top: 10,
-        margin_bottom: 10,
-        margin_start: 12,
-        margin_end: 12,
-      });
+  orientation: Gtk.Orientation.HORIZONTAL,
+  spacing: 12,
+  margin_top: 10,
+  margin_bottom: 10,
+  margin_start: 12,
+  margin_end: 12,
+});
 
-      const title = new Gtk.Label({
-        label: niriWindow.title || "Untitled",
-        xalign: 0,
-        ellipsize: 3,
-      });
+const resolvedIcon =
+  getIconName(niriWindow.app_id);
 
-      const meta = new Gtk.Label({
-        label:
-          `${niriWindow.app_id} • Workspace ${niriWindow.workspace_id}`,
-        xalign: 0,
-      });
+const icon = new Gtk.Image({
+  pixel_size: 32,
+});
 
-      content.append(title);
-      content.append(meta);
+if (typeof resolvedIcon === "string") {
+  icon.set_from_icon_name(resolvedIcon);
+} else {
+  icon.set_from_gicon(resolvedIcon);
+}
 
-      row.set_child(content);
+const textContent = new Gtk.Box({
+  orientation: Gtk.Orientation.VERTICAL,
+  spacing: 4,
+  hexpand: true,
+});
+
+const title = new Gtk.Label({
+  label: niriWindow.title || "Untitled",
+  xalign: 0,
+  ellipsize: 3,
+});
+
+const meta = new Gtk.Label({
+  label:
+    `${getAppName(niriWindow.app_id)} • Workspace ${niriWindow.workspace_id}`,
+  xalign: 0,
+});
+
+textContent.append(title);
+textContent.append(meta);
+
+content.append(icon);
+content.append(textContent);
+
+row.set_child(content);
       listBox.append(row);
     }
 
@@ -285,8 +471,6 @@ keyController.connect(
     return false;
   }
 );
-
-window.add_controller(keyController);
 
   window.add_controller(keyController);
 
