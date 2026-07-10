@@ -122,11 +122,10 @@ niri msg version
 ### 2. Clone NiriSeek
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone https://github.com/mohitraghav1318/NiriSeek.git
 cd niriseek
 ```
 
-Replace `<YOUR_GITHUB_REPOSITORY_URL>` with the repository URL.
 
 ---
 
@@ -565,7 +564,7 @@ This allows the repository to be cloned into different locations without editing
 Clone the repository:
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone https://github.com/mohitraghav1318/NiriSeek.git
 cd niriseek
 ```
 
