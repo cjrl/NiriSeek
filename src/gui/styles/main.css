@@ -1,24 +1,31 @@
+/* Matched to DMS's live Material You palette (~/.cache/DankMaterialShell/dms-colors.json,
+   "green" theme, dark mode) and its cornerRadius=12 setting, so this window reads as
+   part of the same shell as the Mod+Space Spotlight launcher. */
+
 window {
-  background: rgba(12, 14, 12, 0.88);
-  border-radius: 18px;
+  background: rgba(16, 20, 15, 0.92); /* surface #10140f */
+  border: 1px solid rgba(140, 147, 136, 0.18); /* outline #8c9388 */
+  border-radius: 20px;
+  font-family: "Inter Variable", "Inter", sans-serif;
 }
 
 .niriseek-root {
   background: transparent;
-  padding: 14px;
+  padding: 16px;
 }
 
 .niriseek-search {
-  color: #f1f3ec;
-  background: rgba(28, 31, 27, 0.92);
-  border: 1px solid rgba(171, 214, 92, 0.32);
-  border-radius: 11px;
+  color: #e0e4db; /* on_surface */
+  background: rgba(29, 33, 27, 0.92); /* surface_container_high #1d211b */
+  border: 1px solid rgba(76, 175, 80, 0.32); /* primary #4caf50 */
+  border-radius: 12px;
   padding: 10px 12px;
   box-shadow: none;
 }
 
 .niriseek-search:focus {
-  box-shadow: 0 0 0 1px rgba(171, 214, 92, 0.18);
+  border-color: rgba(76, 175, 80, 0.55);
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.20);
 }
 
 .niriseek-list {
@@ -26,7 +33,7 @@ window {
 }
 
 .niriseek-list row {
-  color: #ecefe7;
+  color: #c2c9bd; /* on_surface_variant */
   background: transparent;
   border-radius: 12px;
   margin-top: 3px;
@@ -35,15 +42,15 @@ window {
 }
 
 .niriseek-list row:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(39, 43, 37, 0.65); /* surface_container_highest #272b25 */
 }
 
 .niriseek-list row:selected {
-  color: #f7faef;
-  background: rgba(171, 214, 92, 0.20);
-  box-shadow: inset 3px 0 rgba(171, 214, 92, 0.95);
+  color: #e0e4db; /* on_surface */
+  background: rgba(76, 175, 80, 0.20); /* primary #4caf50 */
+  box-shadow: inset 3px 0 rgba(76, 175, 80, 0.95); /* primary #4caf50 */
 }
 
 .niriseek-list row:selected label {
-  color: #f7faef;
+  color: #e0e4db; /* on_surface */
 }

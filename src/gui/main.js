@@ -20,7 +20,10 @@ import {
   getWindows,
   sortByRecentFocus,
 } from "../niri/windows.js";
+
 let mainWindow = null;
+let searchEntry = null;
+let listBox = null;
 let windows = [];
 
 const app = new Gtk.Application({
@@ -28,32 +31,70 @@ const app = new Gtk.Application({
   flags: Gio.ApplicationFlags.DEFAULT_FLAGS,
 });
 
-app.connect("activate", () => {
-  loadStyles();
-  if (mainWindow) {
-    try {
-      windows = sortByRecentFocus(getWindows());
+function getSelectedRow() {
+  return listBox.get_selected_row();
+}
 
-      renderWindows(
-        searchEntry.get_text()
-      );
-    } catch (error) {
-      console.error(error.message);
-    }
+function selectFirstRow() {
+  const firstRow = listBox.get_row_at_index(0);
 
-    mainWindow.present();
-    searchEntry.grab_focus();
+  if (firstRow) {
+    listBox.select_row(firstRow);
+  }
+}
 
+function moveSelection(direction) {
+  const selectedRow = getSelectedRow();
+
+  if (!selectedRow) {
+    selectFirstRow();
     return;
   }
 
-  try {
-    windows = sortByRecentFocus(getWindows());
-  } catch (error) {
-    console.error(error.message);
-    return;
+  const currentIndex = selectedRow.get_index();
+
+  const nextRow = listBox.get_row_at_index(
+    currentIndex + direction
+  );
+
+  if (nextRow) {
+    listBox.select_row(nextRow);
+  }
+}
+
+function activateSelectedWindow() {
+  const selectedRow = getSelectedRow();
+
+  if (!selectedRow) return;
+
+  focusWindow(selectedRow.niriWindowId);
+  mainWindow.hide();
+}
+
+function renderWindows(query = "") {
+  let child = listBox.get_first_child();
+
+  while (child) {
+    const next = child.get_next_sibling();
+
+    listBox.remove(child);
+
+    child = next;
   }
 
+  const matches = filterWindows(windows, query);
+
+  for (const niriWindow of matches) {
+    listBox.append(createWindowRow(niriWindow));
+  }
+
+  selectFirstRow();
+}
+
+// Builds the window and all its widgets exactly once per process lifetime.
+// Called only the first time the app is activated; every later activation
+// (Mod+Tab again) reuses this same window instead of rebuilding it.
+function buildWindow() {
   const window = new Gtk.ApplicationWindow({
     application: app,
     title: "NiriSeek",
@@ -63,8 +104,21 @@ app.connect("activate", () => {
 
   mainWindow = window;
 
+  // Keep the app process alive after the window is hidden, so re-launching
+  // is an instant D-Bus "activate" to this same process instead of a cold
+  // GJS/GTK4 restart. Only an actual "destroy" (not our hide() calls below)
+  // should ever clear mainWindow.
+  app.hold();
+
   window.connect("destroy", () => {
     mainWindow = null;
+  });
+
+  // Also catch window-manager-initiated close (e.g. a CSD close button) and
+  // just hide instead of letting it fall through to the default destroy.
+  window.connect("close-request", () => {
+    window.hide();
+    return true;
   });
 
   const root = new Gtk.Box({
@@ -77,77 +131,15 @@ app.connect("activate", () => {
   });
   root.add_css_class("niriseek-root");
 
-  const searchEntry = new Gtk.SearchEntry({
+  searchEntry = new Gtk.SearchEntry({
     placeholder_text: "Search open windows...",
   });
   searchEntry.add_css_class("niriseek-search");
 
-  const listBox = new Gtk.ListBox({
+  listBox = new Gtk.ListBox({
     selection_mode: Gtk.SelectionMode.SINGLE,
   });
   listBox.add_css_class("niriseek-list");
-
-  function getSelectedRow() {
-    return listBox.get_selected_row();
-  }
-
-  function selectFirstRow() {
-    const firstRow = listBox.get_row_at_index(0);
-
-    if (firstRow) {
-      listBox.select_row(firstRow);
-    }
-  }
-
-  
-
-  function moveSelection(direction) {
-    const selectedRow = getSelectedRow();
-
-    if (!selectedRow) {
-      selectFirstRow();
-      return;
-    }
-
-    const currentIndex = selectedRow.get_index();
-
-    const nextRow = listBox.get_row_at_index(
-      currentIndex + direction
-    );
-
-    if (nextRow) {
-      listBox.select_row(nextRow);
-    }
-  }
-
-  function activateSelectedWindow() {
-    const selectedRow = getSelectedRow();
-
-    if (!selectedRow) return;
-
-    focusWindow(selectedRow.niriWindowId);
-    window.close();
-  }
-
-  function renderWindows(query = "") {
-    let child = listBox.get_first_child();
-
-    while (child) {
-      const next = child.get_next_sibling();
-
-      listBox.remove(child);
-
-      child = next;
-    }
-
-    const matches = filterWindows(windows, query);
-
-    for (const niriWindow of matches) {
-      listBox.append(createWindowRow(niriWindow));
-    }
-
-    selectFirstRow();
-  }
 
   searchEntry.connect("search-changed", () => {
     renderWindows(searchEntry.get_text());
@@ -157,44 +149,44 @@ app.connect("activate", () => {
     if (!row) return;
 
     focusWindow(row.niriWindowId);
-    window.close();
+    window.hide();
   });
 
-const keyController = new Gtk.EventControllerKey();
+  const keyController = new Gtk.EventControllerKey();
 
-keyController.set_propagation_phase(
-  Gtk.PropagationPhase.CAPTURE
-);
+  keyController.set_propagation_phase(
+    Gtk.PropagationPhase.CAPTURE
+  );
 
-keyController.connect(
-  "key-pressed",
-  (_, keyval) => {
-    if (keyval === Gdk.KEY_Down) {
-      moveSelection(1);
-      return true;
+  keyController.connect(
+    "key-pressed",
+    (_, keyval) => {
+      if (keyval === Gdk.KEY_Down) {
+        moveSelection(1);
+        return true;
+      }
+
+      if (keyval === Gdk.KEY_Up) {
+        moveSelection(-1);
+        return true;
+      }
+
+      if (
+        keyval === Gdk.KEY_Return ||
+        keyval === Gdk.KEY_KP_Enter
+      ) {
+        activateSelectedWindow();
+        return true;
+      }
+
+      if (keyval === Gdk.KEY_Escape) {
+        window.hide();
+        return true;
+      }
+
+      return false;
     }
-
-    if (keyval === Gdk.KEY_Up) {
-      moveSelection(-1);
-      return true;
-    }
-
-    if (
-      keyval === Gdk.KEY_Return ||
-      keyval === Gdk.KEY_KP_Enter
-    ) {
-      activateSelectedWindow();
-      return true;
-    }
-
-    if (keyval === Gdk.KEY_Escape) {
-      window.close();
-      return true;
-    }
-
-    return false;
-  }
-);
+  );
 
   window.add_controller(keyController);
 
@@ -202,10 +194,25 @@ keyController.connect(
   root.append(listBox);
 
   window.set_child(root);
+}
 
-  renderWindows();
+app.connect("activate", () => {
+  loadStyles();
 
-  window.present();
+  try {
+    windows = sortByRecentFocus(getWindows());
+  } catch (error) {
+    console.error(error.message);
+    if (!mainWindow) return;
+  }
+
+  if (!mainWindow) {
+    buildWindow();
+  }
+
+  renderWindows(searchEntry.get_text());
+
+  mainWindow.present();
   searchEntry.grab_focus();
 });
 
