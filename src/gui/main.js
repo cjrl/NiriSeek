@@ -21,6 +21,8 @@ import {
   sortByRecentFocus,
 } from "../niri/windows.js";
 let mainWindow = null;
+let searchEntry = null;
+let listBox = null;
 let windows = [];
 
 const app = new Gtk.Application({
@@ -34,9 +36,8 @@ app.connect("activate", () => {
     try {
       windows = sortByRecentFocus(getWindows());
 
-      renderWindows(
-        searchEntry.get_text()
-      );
+      searchEntry.set_text("");
+      renderWindows();
     } catch (error) {
       console.error(error.message);
     }
@@ -63,6 +64,11 @@ app.connect("activate", () => {
 
   mainWindow = window;
 
+  // Keep the app process alive after the window is hidden below, so the
+  // next launch is an instant D-Bus "activate" to this same process
+  // instead of a cold restart.
+  app.hold();
+
   window.connect("destroy", () => {
     mainWindow = null;
   });
@@ -77,12 +83,12 @@ app.connect("activate", () => {
   });
   root.add_css_class("niriseek-root");
 
-  const searchEntry = new Gtk.SearchEntry({
+  searchEntry = new Gtk.SearchEntry({
     placeholder_text: "Search open windows...",
   });
   searchEntry.add_css_class("niriseek-search");
 
-  const listBox = new Gtk.ListBox({
+  listBox = new Gtk.ListBox({
     selection_mode: Gtk.SelectionMode.SINGLE,
   });
   listBox.add_css_class("niriseek-list");
@@ -126,7 +132,7 @@ app.connect("activate", () => {
     if (!selectedRow) return;
 
     focusWindow(selectedRow.niriWindowId);
-    window.close();
+    window.hide();
   }
 
   function renderWindows(query = "") {
@@ -157,7 +163,7 @@ app.connect("activate", () => {
     if (!row) return;
 
     focusWindow(row.niriWindowId);
-    window.close();
+    window.hide();
   });
 
 const keyController = new Gtk.EventControllerKey();
@@ -188,7 +194,7 @@ keyController.connect(
     }
 
     if (keyval === Gdk.KEY_Escape) {
-      window.close();
+      window.hide();
       return true;
     }
 

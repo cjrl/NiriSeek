@@ -14,8 +14,7 @@ PROJECT_DIR="$(
 
 APP="$PROJECT_DIR/src/gui/main.js"
 
-pkill -f -- "$APP" 2>/dev/null || true
-
-sleep 0.05
-
+# main.js is a single-instance GTK app (application_id "dev.mohit.NiriSeek",
+# default flags), so if it's already running, this just forwards a D-Bus
+# "activate" to it and exits instead of needing to be killed and restarted.
 exec "$APP"
